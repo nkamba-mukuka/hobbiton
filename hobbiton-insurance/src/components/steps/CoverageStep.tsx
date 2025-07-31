@@ -1,7 +1,45 @@
 import React from 'react';
 import type { StepProps } from '../../types/index';
+import { motion } from 'framer-motion';
+import { FaShieldAlt, FaArrowRight, FaArrowLeft, FaDollarSign } from 'react-icons/fa';
 
-const CoverageStep: React.FC<StepProps> = ({ formData, onUpdate, onNext, onPrevious, currentStep, totalSteps }) => {
+const coverageOptions = [
+  {
+    id: 'comprehensive',
+    title: 'Comprehensive',
+    description: 'Full coverage including damage to your vehicle',
+    icon: '🛡️'
+  },
+  {
+    id: 'third-party-fire-theft',
+    title: 'Third Party, Fire & Theft',
+    description: 'Covers damage to others, fire, and theft',
+    icon: '🔥'
+  },
+  {
+    id: 'third-party',
+    title: 'Third Party Only',
+    description: 'Basic coverage for damage to others',
+    icon: '🚗'
+  }
+];
+
+const excessOptions = [
+  { value: '250', label: 'K250' },
+  { value: '500', label: 'K500' },
+  { value: '1000', label: 'K1,000' },
+  { value: '1500', label: 'K1,500' },
+  { value: '2000', label: 'K2,000' }
+];
+
+const CoverageStep: React.FC<StepProps> = ({
+  formData,
+  onUpdate,
+  onNext,
+  onPrevious,
+  currentStep,
+  totalSteps
+}) => {
   const handleInputChange = (field: string, value: string) => {
     onUpdate({ [field]: value });
   };
@@ -11,103 +49,131 @@ const CoverageStep: React.FC<StepProps> = ({ formData, onUpdate, onNext, onPrevi
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Coverage Options</h2>
-        <p className="text-gray-600">Choose your coverage level and excess</p>
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="inline-block"
+        >
+          <FaShieldAlt className="mx-auto h-16 w-16 text-pink-500 animate-float" />
+        </motion.div>
+        <motion.h2
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="text-3xl font-bold mt-4 bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent"
+        >
+          Choose Your Coverage
+        </motion.h2>
+        <motion.p
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="text-gray-400 mt-2"
+        >
+          Select the protection that best suits your needs
+        </motion.p>
       </div>
 
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-4">
-            Coverage Type *
-          </label>
-          <div className="space-y-3">
-            <label className="flex items-center p-4 border border-gray-300 rounded-lg hover:border-green-500 cursor-pointer">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="space-y-6"
+      >
+        <div className="space-y-4">
+          {coverageOptions.map((option, index) => (
+            <motion.label
+              key={option.id}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.5 + index * 0.1 }}
+              className={`block relative cursor-pointer group ${formData.coverage === option.id
+                  ? 'glass-card border-pink-500/50'
+                  : 'glass-card hover:bg-white/10'
+                }`}
+            >
               <input
                 type="radio"
                 name="coverage"
-                value="comprehensive"
-                checked={formData.coverage === 'comprehensive'}
+                value={option.id}
+                checked={formData.coverage === option.id}
                 onChange={(e) => handleInputChange('coverage', e.target.value)}
-                className="mr-3 text-green-600 focus:ring-green-500"
+                className="absolute opacity-0"
               />
-              <div>
-                <div className="font-semibold text-gray-800">Comprehensive</div>
-                <div className="text-sm text-gray-600">Full coverage including damage to your vehicle</div>
+              <div className="p-6 flex items-start gap-4">
+                <div className="text-2xl">{option.icon}</div>
+                <div>
+                  <div className="font-semibold text-white group-hover:text-pink-400 transition-colors">
+                    {option.title}
+                  </div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    {option.description}
+                  </div>
+                </div>
+                <div className={`ml-auto w-4 h-4 rounded-full border-2 mt-1 transition-colors ${formData.coverage === option.id
+                    ? 'bg-pink-500 border-pink-500'
+                    : 'border-gray-500 group-hover:border-pink-500'
+                  }`} />
               </div>
-            </label>
-
-            <label className="flex items-center p-4 border border-gray-300 rounded-lg hover:border-green-500 cursor-pointer">
-              <input
-                type="radio"
-                name="coverage"
-                value="third-party-fire-theft"
-                checked={formData.coverage === 'third-party-fire-theft'}
-                onChange={(e) => handleInputChange('coverage', e.target.value)}
-                className="mr-3 text-green-600 focus:ring-green-500"
-              />
-              <div>
-                <div className="font-semibold text-gray-800">Third Party, Fire & Theft</div>
-                <div className="text-sm text-gray-600">Covers damage to others, fire, and theft</div>
-              </div>
-            </label>
-
-            <label className="flex items-center p-4 border border-gray-300 rounded-lg hover:border-green-500 cursor-pointer">
-              <input
-                type="radio"
-                name="coverage"
-                value="third-party"
-                checked={formData.coverage === 'third-party'}
-                onChange={(e) => handleInputChange('coverage', e.target.value)}
-                className="mr-3 text-green-600 focus:ring-green-500"
-              />
-              <div>
-                <div className="font-semibold text-gray-800">Third Party Only</div>
-                <div className="text-sm text-gray-600">Basic coverage for damage to others</div>
-              </div>
-            </label>
-          </div>
+            </motion.label>
+          ))}
         </div>
 
-        <div>
-          <label htmlFor="excess" className="block text-sm font-medium text-gray-700 mb-2">
-            Excess Amount (K) *
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="glass-card"
+        >
+          <label className="block">
+            <span className="text-gray-300 mb-2 block">Excess Amount</span>
+            <div className="relative">
+              <FaDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <select
+                value={formData.excess || ''}
+                onChange={(e) => handleInputChange('excess', e.target.value)}
+                className="select-field pl-12"
+              >
+                <option value="">Select your excess amount</option>
+                {excessOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-sm text-gray-400 mt-2">
+              Higher excess means lower premium but more out-of-pocket costs
+            </p>
           </label>
-          <select
-            id="excess"
-            className="form-select"
-            value={formData.excess || ''}
-            onChange={(e) => handleInputChange('excess', e.target.value)}
-          >
-            <option value="">Select Excess</option>
-            <option value="250">K250</option>
-            <option value="500">K500</option>
-            <option value="1000">K1,000</option>
-            <option value="1500">K1,500</option>
-            <option value="2000">K2,000</option>
-          </select>
-          <p className="text-sm text-gray-500 mt-1">
-            Higher excess means lower premium but more out-of-pocket costs
-          </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="flex justify-between pt-6">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.9, duration: 0.5 }}
+        className="flex justify-between items-center"
+      >
         <button
           onClick={onPrevious}
-          className="btn-secondary"
+          className="btn-secondary flex items-center space-x-2"
         >
-          Previous
+          <FaArrowLeft className="h-4 w-4" />
+          <span>Back to Driver</span>
         </button>
         <button
           onClick={onNext}
-          className="btn-primary"
           disabled={!isStepValid()}
+          className="btn-primary flex items-center space-x-2"
         >
-          Next
+          <span>View Your Quote</span>
+          <FaArrowRight className="h-4 w-4" />
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 };

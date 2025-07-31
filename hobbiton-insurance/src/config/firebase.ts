@@ -50,14 +50,19 @@ export const saveQuote = async (quoteData: Omit<QuoteData, 'id'>): Promise<strin
     if (firebaseConfig.apiKey === "demo-key") {
       console.log('Firebase not configured - saving to localStorage');
       const savedQuotes = JSON.parse(localStorage.getItem('savedQuotes') || '[]');
-      const newQuote = { ...quoteData, id: 'demo-' + Date.now() };
+      const newQuote = {
+        ...quoteData,
+        id: 'demo-' + Date.now(),
+        timestamp: new Date().toISOString() // Store as ISO string for consistency
+      };
       savedQuotes.push(newQuote);
       localStorage.setItem('savedQuotes', JSON.stringify(savedQuotes));
       return newQuote.id;
     }
+
     const docRef = await addDoc(collection(db, 'quotes'), {
       ...quoteData,
-      timestamp: Timestamp.fromDate(quoteData.timestamp)
+      timestamp: Timestamp.fromDate(new Date(quoteData.timestamp))
     });
     return docRef.id;
   } catch (error) {
@@ -72,13 +77,23 @@ export const getSavedQuotes = async (userId: string): Promise<QuoteData[]> => {
     if (firebaseConfig.apiKey === "demo-key") {
       console.log('Firebase not configured - loading from localStorage');
       const savedQuotes = JSON.parse(localStorage.getItem('savedQuotes') || '[]');
-      return savedQuotes.filter((quote: QuoteData) => quote.userId === userId);
+      return savedQuotes
+        .filter((quote: QuoteData) => quote.userId === userId)
+        .map((quote: QuoteData) => ({
+          ...quote,
+          timestamp: new Date(quote.timestamp) // Convert ISO string back to Date
+        }))
+        .sort((a: QuoteData, b: QuoteData) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
     }
+
     const q = query(
       collection(db, 'quotes'),
       where('userId', '==', userId),
       orderBy('timestamp', 'desc')
     );
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,

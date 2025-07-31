@@ -6,13 +6,20 @@ import VehicleStep from './components/steps/VehicleStep';
 import DriverStep from './components/steps/DriverStep';
 import CoverageStep from './components/steps/CoverageStep';
 import QuoteStep from './components/steps/QuoteStep';
-import SummaryPanel from './components/SummaryPanel';
 import SavedQuotes from './components/SavedQuotes';
 import Modal from './components/Modal';
-import hobbitonLogo from './assets/hobbiton-logo.png';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaCar, FaUser, FaShieldAlt, FaCalculator, FaSave, FaArrowRight } from 'react-icons/fa';
 
 const FORM_VERSION = '1.0.0';
 const TOTAL_STEPS = 4;
+
+const steps = [
+  { id: 1, icon: FaCar, label: 'Vehicle', color: 'from-blue-500 to-blue-600' },
+  { id: 2, icon: FaUser, label: 'Driver', color: 'from-purple-500 to-purple-600' },
+  { id: 3, icon: FaShieldAlt, label: 'Coverage', color: 'from-pink-500 to-pink-600' },
+  { id: 4, icon: FaCalculator, label: 'Quote', color: 'from-green-500 to-green-600' }
+];
 
 function App() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -21,22 +28,18 @@ function App() {
   const [savedQuotes, setSavedQuotes] = useState<QuoteData[]>([]);
   const [showSavedQuotes, setShowSavedQuotes] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
 
-  // Initialize Firebase auth and load saved data
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Sign in user anonymously
         const user = await signInUser();
         if (user) {
           setUserId(user.uid);
-          
-          // Load saved quotes
           const quotes = await getSavedQuotes(user.uid);
           setSavedQuotes(quotes);
         }
 
-        // Load saved form data from localStorage
         const savedData = localStorage.getItem('insuranceQuote');
         if (savedData) {
           const parsedData = JSON.parse(savedData);
@@ -54,7 +57,13 @@ function App() {
     initializeApp();
   }, []);
 
-  // Save form data to localStorage whenever it changes
+  // Update showQuoteModal when reaching the final step
+  useEffect(() => {
+    if (currentStep === TOTAL_STEPS) {
+      setShowQuoteModal(true);
+    }
+  }, [currentStep]);
+
   useEffect(() => {
     if (Object.keys(formData).length > 0) {
       localStorage.setItem('insuranceQuote', JSON.stringify({
@@ -80,8 +89,37 @@ function App() {
     }
   };
 
-  const handleStepClick = (step: number) => {
-    setCurrentStep(step);
+  const clearForm = () => {
+    // Clear all form fields
+    setFormData({
+      // Vehicle Information
+      year: '',
+      make: '',
+      model: '',
+      mileage: '',
+
+      // Driver Information
+      fullName: '',
+      age: '',
+      licenseYears: '',
+      claims: '',
+
+      // Coverage Information
+      coverage: '',
+      excess: '',
+
+      // Additional Information
+      address: '',
+      phone: '',
+      email: ''
+    });
+
+    // Remove from localStorage
+    localStorage.removeItem('insuranceQuote');
+
+    // Reset to first step
+    setCurrentStep(1);
+    setShowQuoteModal(false);
   };
 
   const handleSaveQuote = async () => {
@@ -99,10 +137,10 @@ function App() {
     try {
       const quoteId = await saveQuote(quoteData);
       if (quoteId) {
-        // Refresh saved quotes
         const quotes = await getSavedQuotes(userId);
         setSavedQuotes(quotes);
         setShowSavedQuotes(true);
+        clearForm();
       }
     } catch (error) {
       console.error('Error saving quote:', error);
@@ -116,9 +154,6 @@ function App() {
   };
 
   const handleDeleteQuote = async (quoteId: string) => {
-    // In a real app, you would implement delete functionality
-    console.log('Delete quote:', quoteId);
-    // For now, just remove from local state
     setSavedQuotes(prev => prev.filter(quote => quote.id !== quoteId));
   };
 
@@ -148,112 +183,131 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-white">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="text-blue-500 mt-4 text-lg">Loading your experience...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        {/* Header with Logo */}
-        <div className="text-center mb-8">
-          <div className="logo-container">
-            <img src={hobbitonLogo} alt="Hobbiton Insurance" className="h-20 w-auto mb-4" />
-          </div>
-          <p className="logo-tagline">Motor Insurance Quote Calculator</p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-white">
-              Step {currentStep} of {TOTAL_STEPS}
-            </span>
-            <span className="text-sm text-white/80">
-              {Math.round((currentStep / TOTAL_STEPS) * 100)}% Complete
-            </span>
-          </div>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
-            ></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 bg-black/50 backdrop-blur-lg z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <FaShieldAlt className="text-blue-500 h-8 w-8" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                InsureFlow
+              </span>
+            </div>
+            <button
+              onClick={() => setShowSavedQuotes(true)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
+            >
+              <FaSave className="text-blue-500" />
+              <span>Saved Quotes</span>
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Form Section */}
-          <div className="lg:col-span-2">
-            <div className="card">
+      {/* Main Content */}
+      <main className="container mx-auto px-4 pt-24 pb-8">
+        {/* Steps Progress */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center max-w-3xl mx-auto">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex flex-col items-center relative">
+                <motion.div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center 
+                    ${currentStep >= step.id ? `bg-gradient-to-r ${step.color}` : 'bg-gray-700'} 
+                    transition-all cursor-pointer hover:scale-110`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => currentStep >= step.id && setCurrentStep(step.id)}
+                >
+                  <step.icon className="h-6 w-6 text-white" />
+                </motion.div>
+                <span className="mt-2 text-sm font-medium text-gray-400">{step.label}</span>
+                {index < steps.length - 1 && (
+                  <div
+                    className="absolute left-[calc(100%+0.5rem)] top-8 w-[calc(100%-2rem)] h-0.5 bg-gray-700"
+                  >
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-500"
+                      style={{ width: currentStep > step.id ? '100%' : '0%' }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 shadow-2xl"
+            >
               {renderCurrentStep()}
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <SummaryPanel
-              formData={formData}
-              currentStep={currentStep}
-              onStepClick={handleStepClick}
-            />
-            
-            <div className="text-center">
-              <button
-                onClick={() => setShowSavedQuotes(true)}
-                className="btn-secondary w-full"
-              >
-                View Saved Quotes
-              </button>
-            </div>
+      {/* Modals */}
+      <Modal
+        isOpen={showSavedQuotes}
+        onClose={() => setShowSavedQuotes(false)}
+        title="Your Saved Quotes"
+      >
+        <SavedQuotes
+          savedQuotes={savedQuotes}
+          onLoadQuote={handleLoadQuote}
+          onDeleteQuote={handleDeleteQuote}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showQuoteModal}
+        onClose={() => {
+          setShowQuoteModal(false);
+          clearForm();
+        }}
+        title="Ready to Save Your Quote?"
+      >
+        <div className="space-y-6">
+          <p className="text-gray-300 text-lg">
+            Great news! We've calculated your personalized insurance quote.
+          </p>
+          <div className="flex gap-4">
+            <button
+              onClick={handleSaveQuote}
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-300 flex items-center justify-center space-x-2"
+            >
+              <FaSave className="h-5 w-5" />
+              <span>Save Quote</span>
+            </button>
+            <button
+              onClick={clearForm}
+              className="flex-1 bg-white/10 text-white py-3 px-6 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 flex items-center justify-center space-x-2"
+            >
+              <FaArrowRight className="h-5 w-5" />
+              <span>Start New Quote</span>
+            </button>
           </div>
         </div>
-
-        {/* Saved Quotes Modal */}
-        <Modal
-          isOpen={showSavedQuotes}
-          onClose={() => setShowSavedQuotes(false)}
-          title="Saved Quotes"
-        >
-          <SavedQuotes
-            savedQuotes={savedQuotes}
-            onLoadQuote={handleLoadQuote}
-            onDeleteQuote={handleDeleteQuote}
-          />
-        </Modal>
-
-        {/* Save Quote Modal */}
-        <Modal
-          isOpen={currentStep === TOTAL_STEPS}
-          onClose={() => {}}
-          title="Save Your Quote"
-        >
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Would you like to save this quote for future reference?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveQuote}
-                className="btn-primary flex-1"
-              >
-                Save Quote
-              </button>
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="btn-secondary flex-1"
-              >
-                Start New Quote
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </div>
+      </Modal>
     </div>
   );
 }

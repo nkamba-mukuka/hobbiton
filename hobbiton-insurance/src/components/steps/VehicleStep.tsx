@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { StepProps } from '../../types';
 import { motion } from 'framer-motion';
-import { FaCar, FaSearch, FaInfoCircle } from 'react-icons/fa';
+import { FaCar, FaSearch, FaInfoCircle, FaTachometerAlt } from 'react-icons/fa';
 import { Combobox } from '@headlessui/react';
 
 interface VehicleOption {
@@ -9,6 +9,7 @@ interface VehicleOption {
   make: string;
   model: string;
   variant?: string;
+  image?: string;
 }
 
 const VehicleStep: React.FC<StepProps> = ({
@@ -23,6 +24,7 @@ const VehicleStep: React.FC<StepProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleOption | null>(null);
   const [mileage, setMileage] = useState(formData.mileage || '');
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // Simulated vehicle data - in a real app, this would come from an API
   const fetchVehicles = async (searchQuery: string) => {
@@ -31,14 +33,44 @@ const VehicleStep: React.FC<StepProps> = ({
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const mockVehicles: VehicleOption[] = [
-      { year: '2024', make: 'Toyota', model: 'Camry', variant: 'Hybrid' },
-      { year: '2024', make: 'Honda', model: 'Civic', variant: 'Sport' },
-      { year: '2024', make: 'Tesla', model: 'Model 3', variant: 'Long Range' },
-      { year: '2023', make: 'BMW', model: '3 Series', variant: '330i' },
-      { year: '2023', make: 'Mercedes', model: 'C-Class', variant: 'C300' },
+      {
+        year: '2024',
+        make: 'Tesla',
+        model: 'Model 3',
+        variant: 'Long Range',
+        image: 'https://example.com/tesla-model-3.jpg'
+      },
+      {
+        year: '2024',
+        make: 'BMW',
+        model: 'i4',
+        variant: 'M50',
+        image: 'https://example.com/bmw-i4.jpg'
+      },
+      {
+        year: '2024',
+        make: 'Porsche',
+        model: 'Taycan',
+        variant: 'Turbo S',
+        image: 'https://example.com/porsche-taycan.jpg'
+      },
+      {
+        year: '2024',
+        make: 'Mercedes-Benz',
+        model: 'EQS',
+        variant: '580 4MATIC',
+        image: 'https://example.com/mercedes-eqs.jpg'
+      },
+      {
+        year: '2024',
+        make: 'Audi',
+        model: 'e-tron GT',
+        variant: 'RS',
+        image: 'https://example.com/audi-etron-gt.jpg'
+      },
     ].filter(vehicle =>
       Object.values(vehicle).some(value =>
-        value.toLowerCase().includes(searchQuery.toLowerCase())
+        typeof value === 'string' && value.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
 
@@ -67,6 +99,10 @@ const VehicleStep: React.FC<StepProps> = ({
     onUpdate({ mileage: value });
   };
 
+  const formatMileage = (value: string) => {
+    return value ? parseInt(value).toLocaleString() : '';
+  };
+
   const handleNext = () => {
     if (selectedVehicle && mileage) {
       onNext();
@@ -76,102 +112,143 @@ const VehicleStep: React.FC<StepProps> = ({
   const isValid = selectedVehicle && mileage;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
-    >
-      <div className="text-center mb-8">
-        <FaCar className="mx-auto h-12 w-12 text-primary mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Tell us about your vehicle</h2>
-        <p className="text-gray-300">Search by make, model, or year to get started</p>
+    <div className="space-y-8">
+      <div className="text-center">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="inline-block"
+        >
+          <FaCar className="mx-auto h-16 w-16 text-blue-500 animate-float" />
+        </motion.div>
+        <motion.h2
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="text-3xl font-bold mt-4 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent"
+        >
+          Let's Start with Your Vehicle
+        </motion.h2>
+        <motion.p
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="text-gray-400 mt-2"
+        >
+          Search for your vehicle or enter its details below
+        </motion.p>
       </div>
 
-      <div className="relative">
-        <Combobox value={selectedVehicle} onChange={handleVehicleSelect}>
-          <div className="relative">
-            <div className="relative w-full">
-              <FaSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <Combobox.Input
-                className="w-full h-12 pl-10 pr-4 text-sm bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-white placeholder-gray-400"
-                placeholder="Start typing to search vehicles..."
-                displayValue={(vehicle: VehicleOption | null) =>
-                  vehicle
-                    ? `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.variant || ''}`
-                    : ''
-                }
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {loading && (
-                <div className="absolute right-3 top-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                </div>
-              )}
-            </div>
-
-            <Combobox.Options className="absolute z-10 w-full mt-1 bg-gray-800 rounded-lg shadow-lg max-h-60 overflow-auto">
-              {vehicles.map((vehicle, idx) => (
-                <Combobox.Option
-                  key={idx}
-                  value={vehicle}
-                  className={({ active }) =>
-                    `relative cursor-pointer select-none py-3 px-4 ${active ? 'bg-primary text-white' : 'text-gray-300'
-                    }`
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="glass-card"
+      >
+        <div className="relative">
+          <Combobox value={selectedVehicle} onChange={handleVehicleSelect}>
+            <div className="relative">
+              <div className="relative w-full">
+                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Combobox.Input
+                  className="input-field pl-12"
+                  placeholder="Type to search vehicles (e.g., Tesla Model 3, BMW i4)"
+                  displayValue={(vehicle: VehicleOption | null) =>
+                    vehicle
+                      ? `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.variant || ''}`
+                      : ''
                   }
-                >
-                  {({ selected }) => (
-                    <div className="flex items-center">
-                      <FaCar className="h-5 w-5 mr-3" />
-                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.variant}
-                      </span>
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                {loading && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="loading-dots">
+                      <div></div>
+                      <div></div>
+                      <div></div>
                     </div>
-                  )}
-                </Combobox.Option>
-              ))}
-              {query.length >= 2 && vehicles.length === 0 && (
-                <div className="py-3 px-4 text-gray-400">No vehicles found</div>
-              )}
-            </Combobox.Options>
-          </div>
-        </Combobox>
-      </div>
+                  </div>
+                )}
+              </div>
 
-      <div className="space-y-4">
-        <label className="block">
-          <span className="text-white mb-1 block">Annual Mileage</span>
-          <div className="relative">
-            <input
-              type="text"
-              value={mileage}
-              onChange={handleMileageChange}
-              className="w-full h-12 pl-4 pr-10 text-sm bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-white"
-              placeholder="Enter annual mileage"
-            />
-            <div className="absolute right-3 top-3 text-gray-400">
-              <FaInfoCircle className="h-5 w-5" title="Estimated annual mileage affects your quote" />
+              <Combobox.Options className="absolute z-10 w-full mt-2 overflow-auto rounded-xl bg-gray-800/80 backdrop-blur-xl border border-white/10 shadow-xl max-h-60">
+                {vehicles.map((vehicle, idx) => (
+                  <Combobox.Option
+                    key={idx}
+                    value={vehicle}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-4 px-6 ${active ? 'bg-blue-500/20 text-white' : 'text-gray-300'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <div className="flex items-center">
+                        <FaCar className={`h-5 w-5 mr-3 ${selected ? 'text-blue-500' : 'text-gray-400'}`} />
+                        <span className={`block truncate ${selected ? 'font-semibold text-blue-500' : ''}`}>
+                          {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.variant}
+                        </span>
+                      </div>
+                    )}
+                  </Combobox.Option>
+                ))}
+                {query.length >= 2 && vehicles.length === 0 && (
+                  <div className="py-4 px-6 text-gray-400">No vehicles found</div>
+                )}
+              </Combobox.Options>
             </div>
-          </div>
-        </label>
-      </div>
+          </Combobox>
+        </div>
 
-      <div className="flex justify-between items-center mt-8">
+        <div className="mt-6">
+          <label className="block">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-300">Annual Mileage</span>
+              <div
+                className="relative"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <FaInfoCircle className="h-5 w-5 text-gray-400 cursor-help" />
+                {showTooltip && (
+                  <div className="tooltip tooltip-top absolute -top-12 left-1/2 transform -translate-x-1/2 w-48 text-center">
+                    Your annual mileage helps us calculate an accurate premium
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="relative">
+              <FaTachometerAlt className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                value={formatMileage(mileage)}
+                onChange={handleMileageChange}
+                className="input-field pl-12"
+                placeholder="Enter annual mileage"
+              />
+            </div>
+          </label>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="flex justify-between items-center"
+      >
         <div className="text-sm text-gray-400">
           Step {currentStep} of {totalSteps}
         </div>
         <button
           onClick={handleNext}
           disabled={!isValid}
-          className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${isValid
-              ? 'bg-primary text-white hover:bg-primary-dark'
-              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
+          className="btn-primary"
         >
-          Next Step
+          Continue to Driver Details
         </button>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 
